@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
-using System.Web.Http.Description;
 using Microsoft.Bot.Connector;
-using Newtonsoft.Json;
+using ITCrowd.Controllers;
 
 namespace ITCrowd
 {
@@ -22,11 +20,14 @@ namespace ITCrowd
             if (activity.Type == ActivityTypes.Message)
             {
                 ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
-                // calculate something for us to return
-                int length = (activity.Text ?? string.Empty).Length;
+
+                StateClient stateClient = activity.GetStateClient();
+                BotData userData = await stateClient.BotState.GetUserDataAsync(activity.ChannelId, activity.From.Id);
 
                 // return our reply to the user
-                Activity reply = activity.CreateReply($"You sent {activity.Text} which was {length} characters");
+                Activity reply = activity.CreateReply(GetAnswer(activity.Text, userData));
+                await stateClient.BotState.SetUserDataAsync(activity.ChannelId, activity.From.Id, userData);
+
                 await connector.Conversations.ReplyToActivityAsync(reply);
             }
             else
@@ -64,6 +65,24 @@ namespace ITCrowd
             }
 
             return null;
+        }
+
+        private string GetAnswer(string message, BotData userData)
+        {
+            const string STAGE = "conversationStage";
+            var conversationStage = userData.GetProperty<ConversationStage>(STAGE);
+            switch (conversationStage)
+            {
+                case ConversationStage.Hello:
+                    userData.SetProperty(STAGE, ConversationStage.SomethingWrong);
+                    return "Hello IT?";
+                case ConversationStage.SomethingWrong:
+                    userData.SetProperty(STAGE, ConversationStage.TurnOnOff);
+                    return "Have you tried to turn it off an on again?";
+                default:
+                    userData.SetProperty(STAGE, ConversationStage.Hello);
+                    return "You are welcome then";
+            }
         }
     }
 }

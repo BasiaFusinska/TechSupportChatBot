@@ -21,11 +21,14 @@ namespace ITCrowd
             {
                 ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
 
+                // Get the state for the client
                 StateClient stateClient = activity.GetStateClient();
                 BotData userData = await stateClient.BotState.GetUserDataAsync(activity.ChannelId, activity.From.Id);
 
-                // return our reply to the user
+                // Return the reply to the user
                 Activity reply = activity.CreateReply(GetAnswer(activity.Text, userData));
+
+                // Save the state
                 await stateClient.BotState.SetUserDataAsync(activity.ChannelId, activity.From.Id, userData);
 
                 await connector.Conversations.ReplyToActivityAsync(reply);
@@ -79,10 +82,24 @@ namespace ITCrowd
                 case ConversationStage.SomethingWrong:
                     userData.SetProperty(STAGE, ConversationStage.TurnOnOff);
                     return "Have you tried to turn it off an on again?";
+                case ConversationStage.TurnOnOff:
+                    if (TurnOffWorked(message))
+                    {
+                        userData.SetProperty(STAGE, ConversationStage.Hello);
+                        return "You are welcome then";
+                    }
+                    userData.SetProperty(STAGE, ConversationStage.PluggedIn);
+                    return "Is it definitely plugged in?";
                 default:
                     userData.SetProperty(STAGE, ConversationStage.Hello);
                     return "You are welcome then";
+
             }
+        }
+
+        private bool TurnOffWorked(string message)
+        {
+            return message.ToLower().Contains("no") || !message.ToLower().Contains("yes");
         }
     }
 }

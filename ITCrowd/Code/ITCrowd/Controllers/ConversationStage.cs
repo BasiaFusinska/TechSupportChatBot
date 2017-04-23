@@ -4,6 +4,7 @@
     {
         Hello = 0,
         SomethingWrong = 1,
-        TurnOnOff = 2
+        TurnOnOff = 2,
+        PluggedIn = 3
     }
 }

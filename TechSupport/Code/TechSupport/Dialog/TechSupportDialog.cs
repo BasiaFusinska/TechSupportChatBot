@@ -14,20 +14,25 @@ namespace TechSupport.Dialog
     [Serializable]
     public class TechSupportDialog : LuisDialog<object>
     {
+        private DialogPhase dialogPhase = DialogPhase.Hello;
+
         [LuisIntent("")]
         public async Task None(IDialogContext context, LuisResult result)
         {
-            await DidntGetThat(context);
+            await Respond(context, Phrases.DIDNT_GET_THAT);
         }
 
-        private async Task DidntGetThat(IDialogContext context)
+        private async Task Respond(IDialogContext context, string message, int sleep = 400)
         {
-            await Respond(context, Phrases.DIDNT_GET_THAT);
+            Thread.Sleep(sleep);
+            await context.PostAsync(message);
+            context.Wait(MessageReceived);
         }
 
         [LuisIntent("Hello")]
         public async Task Hello(IDialogContext context, LuisResult result)
         {
+            dialogPhase = DialogPhase.NotWorking;
             await Respond(context, Phrases.HELLO);
         }
 
@@ -37,11 +42,27 @@ namespace TechSupport.Dialog
             await Respond(context, Phrases.GOODBYE);
         }
 
-        private async Task Respond(IDialogContext context, string message, int sleep = 400)
+        [LuisIntent("NotWorking")]
+        public async Task NotWorking(IDialogContext context, LuisResult result)
         {
-            Thread.Sleep(sleep);
-            await context.PostAsync(message);
-            context.Wait(MessageReceived);
+            if (dialogPhase == DialogPhase.NotWorking)
+            {
+                dialogPhase = DialogPhase.TurnOffOn;
+                await Respond(context, Phrases.TURN_OFF_ON);
+            }
+            else
+            {
+                dialogPhase = DialogPhase.Details;
+                await Respond(context, Phrases.DETAILS);
+            }
         }
+
+        [LuisIntent("Details")]
+        public async Task Details(IDialogContext context, LuisResult result)
+        {
+            dialogPhase = DialogPhase.Bye;
+            await Respond(context, Phrases.REPAIR);
+        }
+
     }
 }

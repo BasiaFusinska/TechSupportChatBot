@@ -64,5 +64,46 @@ namespace TechSupport.Dialog
             await Respond(context, Phrases.REPAIR);
         }
 
+        [LuisIntent("Yes")]
+        public async Task Yes(IDialogContext context, LuisResult result)
+        {
+            if (dialogPhase == DialogPhase.TurnOffOn)
+            {
+                dialogPhase = DialogPhase.Result;
+                await Respond(context, Phrases.RESULT);
+            }
+            else
+            {
+                await Respond(context, Phrases.DIDNT_GET_THAT);
+            }
+        }
+
+        [LuisIntent("No")]
+        public async Task No(IDialogContext context, LuisResult result)
+        {
+            if (dialogPhase == DialogPhase.TurnOffOn)
+            {
+                dialogPhase = DialogPhase.Result;
+                await Respond(context, Phrases.TURNOO_RESULT);
+            }
+            else
+            {
+                await Respond(context, Phrases.DIDNT_GET_THAT);
+            }
+        }
+
+        [LuisIntent("Worked")]
+        public async Task Worked(IDialogContext context, LuisResult result)
+        {
+            dialogPhase = DialogPhase.Hello;
+            await Respond(context, Phrases.BYE);
+        }
+
+        [LuisIntent("Try")]
+        public async Task Try(IDialogContext context, LuisResult result)
+        {
+            dialogPhase = DialogPhase.Result;
+            await Respond(context, Phrases.RESULT);
+        }
     }
 }
